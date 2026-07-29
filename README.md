@@ -7,4 +7,6 @@
 * Clone the repository
 * Run `npm install`
 * Run `npx tsoa routes`
+* Run `cp .env.sample .env`
+* Edit `.env` and change important configuration
 * Run `npm run dev`

@@ -1,0 +1,4 @@
+/node_modules
+/src/routes.ts
+/.env
+/dist

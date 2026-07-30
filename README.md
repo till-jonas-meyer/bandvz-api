@@ -10,3 +10,6 @@
 * Run `cp .env.sample .env`
 * Edit `.env` and change important configuration
 * Run `npm run dev`
+
+
+`npx typeorm-ts-node-commonjs migration:generate src/migrations/AddUserTable -d src/data-source.ts

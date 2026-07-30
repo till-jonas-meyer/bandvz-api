@@ -1,5 +1,6 @@
 import express, { json, urlencoded } from "express";
 import { RegisterRoutes } from "./routes";
+import "reflect-metadata";
 
 export const app = express();
 

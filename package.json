@@ -10,12 +10,17 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc --watch",
     "nodemon": "nodemon --watch dist dist/server.js",
-    "dev": "concurrently \"npm:tsc\" \"npm:nodemon\""
+    "dev": "concurrently \"npm:tsc\" \"npm:nodemon\"",
+    "migration:generate": "node generate-migration.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "tsoa": "^6.6.0"
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0",
+    "reflect-metadata": "^0.2.2",
+    "tsoa": "^6.6.0",
+    "typeorm": "^0.3.31"
   },
   "devDependencies": {
     "@eslint/css": "^1.4.0",
@@ -23,12 +28,14 @@
     "@eslint/json": "^2.0.1",
     "@eslint/markdown": "^8.0.3",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.2",
     "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "eslint-plugin-jsonc": "^3.3.0",
     "globals": "^17.8.0",
     "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0"
   }

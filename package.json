@@ -11,7 +11,8 @@
     "tsc": "tsc --watch",
     "nodemon": "nodemon --watch dist dist/server.js",
     "dev": "concurrently \"npm:tsc\" \"npm:nodemon\"",
-    "migration:generate": "node generate-migration.js"
+    "migration:generate": "node generate-migration.js",
+    "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/data-source.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

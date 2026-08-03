@@ -22,6 +22,7 @@ const errorRequestHandler: ErrorRequestHandler = (err, req, res, next) => {
     });
   }
 
+  console.error('Internal Error:', err.status, ':', err.message);
   res.status(500).json({
     message: "Interner Serverfehler",
   });

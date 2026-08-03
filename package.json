@@ -15,8 +15,10 @@
     "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/data-source.ts"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",

@@ -1,8 +1,11 @@
 import 'dotenv/config';
 import { app } from './app';
+import { AppDataSource } from './data-source';
 
-const port = process.env.PORT;
+AppDataSource.initialize().then(() => {
+  const port = process.env.PORT;
 
-app.listen(port, () => {
-  console.log(`Server listening at port ${port}`);
+  app.listen(port, () => {
+    console.log(`Server listening at port ${port}`);
+  });
 });

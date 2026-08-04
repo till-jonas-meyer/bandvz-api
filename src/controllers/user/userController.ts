@@ -20,6 +20,7 @@ import argon2 from 'argon2';
 import { Request as ExpressRequest } from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
+import { sendMail } from '../../email';
 
 type LoginParameters = {
   email: string;
@@ -79,10 +80,44 @@ export class UserController extends Controller {
   @Response(200, 'Successfully registered')
   @Middlewares(rateLimiter)
   public async register(@Body() body: RegisterParamaters) {
-    const activationCode = randomBytes(32).toString();
-    const activationCodeHash = createHash('sha256').update(activationCode).digest('hex');
+
     const repo = AppDataSource.getRepository(User);
-    const newUser = { body, active: false };
+
+    // Check if user already exists
+    const existing = await repo.existsBy({ email: body.email });
+    if (existing) {
+      throw new HttpError(409, 'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.');
+    }
+
+    const activationCode = randomBytes(32).toString('utf-8');
+    const activationCodeHash = createHash('sha256').update(activationCode).digest('hex');
+    const hashedPassword = await argon2.hash(body.password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 1,
+    });
+
+    const newUser = {
+      email: body.email,
+      password: hashedPassword,
+      activationCode: activationCodeHash,
+      active: false,
+    };
+
+    await repo.save(newUser);
+
+    await sendMail(
+      newUser.email,
+      'Aktivierung ihres Benutzerkontos bei BandVZ',
+      'activation-link',
+      {
+        frontendUrl: process.env.FRONTEND_URL,
+        activationCode
+      }
+    );
+
+    return {};
   }
 
   @Get('{userId}')

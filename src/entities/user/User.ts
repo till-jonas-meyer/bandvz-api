@@ -11,11 +11,11 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ nullable: true })
-  activationCode: string;
+  @Column({ type: 'varchar', nullable: true })
+  activationCode: string | null;
 
-  @Column({ nullable: true })
-  resetCode: string;
+  @Column({ type: 'varchar', nullable: true })
+  resetCode: string | null;
 
   @Column()
   active: boolean;

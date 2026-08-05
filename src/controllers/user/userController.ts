@@ -8,7 +8,9 @@ import {
   Request,
   Body,
   Response,
-  Middlewares
+  SuccessResponse,
+  Middlewares,
+  Security
 } from 'tsoa';
 import jwt from 'jsonwebtoken';
 import "dotenv/config";
@@ -21,23 +23,37 @@ import { Request as ExpressRequest } from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
 import { sendMail } from '../../email';
+import { hashPassword } from '../../helpers/hashPassword';
 
 type LoginParameters = {
   email: string;
   password: string;
-}
+};
 
 type RegisterParamaters = {
   email: string;
   password: string;
-}
+};
+
+type ActivateParameters = {
+  activationCode: string;
+};
+
+type ResetPasswordParameters = {
+  email: string;
+};
+
+type ChangePasswordParameters = {
+  resetCode: string;
+  password: string;
+};
 
 @Route('user')
 export class UserController extends Controller {
 
   @Post('login')
+  @SuccessResponse(200, 'Successful login')
   @Response(500, 'Invalid JWT secret or other server error')
-  @Response(200, 'Successful login')
   @Response(401, 'Credentials invalid')
   @Middlewares(rateLimiter)
   public async login(@Body() body: LoginParameters, @Request() req: ExpressRequest) {
@@ -77,7 +93,9 @@ export class UserController extends Controller {
   }
 
   @Post('register')
-  @Response(200, 'Successfully registered')
+  @SuccessResponse(200, 'Successfully registered')
+  @Response(409, 'User exists')
+  @Response(500, 'Error while registering')
   @Middlewares(rateLimiter)
   public async register(@Body() body: RegisterParamaters) {
 
@@ -89,14 +107,9 @@ export class UserController extends Controller {
       throw new HttpError(409, 'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.');
     }
 
-    const activationCode = randomBytes(32).toString('utf-8');
+    const activationCode = randomBytes(32).toString('hex');
     const activationCodeHash = createHash('sha256').update(activationCode).digest('hex');
-    const hashedPassword = await argon2.hash(body.password, {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 1,
-    });
+    const hashedPassword = await hashPassword(body.password);
 
     const newUser = {
       email: body.email,
@@ -117,14 +130,94 @@ export class UserController extends Controller {
       }
     );
 
-    return {};
+    return { message: 'Du wurdest registriert.' };
   }
 
-  @Get('{userId}')
-  public async getUser(@Path() userId: number) {
-    return {
-      id: userId,
-      email: 'johndoe@example.com'
+  @Post('activate')
+  @SuccessResponse(200, 'Successfully activated')
+  @Response(404, 'User not found by activation code')
+  @Middlewares(rateLimiter)
+  public async activate(@Body() body: ActivateParameters) {
+
+    const repo = AppDataSource.getRepository(User);
+
+    const activationCodeHash = createHash('sha256').update(body.activationCode).digest('hex');
+
+    const user = await repo.findOneBy({ activationCode: activationCodeHash });
+
+    if (user === null) {
+      throw new HttpError(404, 'Es wurde kein Benutzer mit dem gegebenen Aktivierungscode gefunden.');
     }
+
+    user.active = true;
+    repo.save(user);
+
+    return { message: 'Dein Benutzerkonto wurde aktiviert.' };
+  }
+
+  @Post('reset-password')
+  @SuccessResponse(200, 'Reset code was generated and sent by mail')
+  @Response(404, 'User with email not found')
+  @Middlewares(rateLimiter)
+  public async resetPassword(@Body() body: ResetPasswordParameters) {
+
+    const repo = AppDataSource.getRepository(User);
+
+    const user = await repo.findOneBy({ email: body.email });
+
+    if (user !== null) {
+      const resetCode = randomBytes(32).toString('hex');
+      const resetCodeHash = createHash('sha256').update(resetCode).digest('hex');
+      user.resetCode = resetCodeHash;
+      repo.save(user);
+
+      await sendMail(
+        user.email,
+        'Passwort bei BandVZ zurücksetzen',
+        'reset-link',
+        {
+          frontendUrl: process.env.FRONTEND_URL,
+          resetCode: resetCode
+        }
+      );
+    }
+
+    return { message: 'Ein Rücksetzungslink wurde an die angegebene E-Mail-Adresse geschickt, falls sie in der Datenbank existiert.' };
+  }
+
+  @Post('change-password')
+  @SuccessResponse(200, 'Password was changed')
+  @Response(404, 'User with reset code not found')
+  @Middlewares(rateLimiter)
+  public async changePassword(@Body() body: ChangePasswordParameters) {
+
+    const repo = AppDataSource.getRepository(User);
+    const resetCodeHash = createHash('sha256').update(body.resetCode).digest('hex');
+
+    const user = await repo.findOneBy({ resetCode: resetCodeHash });
+
+    if (user === null) {
+      throw new HttpError(404, 'Es wurde kein Benutzer zu diesem Rücksetzungscode gefunden.');
+    }
+    user.resetCode = null;
+    user.password = await hashPassword(body.password);
+    await repo.save(user);
+
+    return { message: 'Das Passwort wurde geändert.' };
+  }
+
+
+  @Get('profile')
+  @SuccessResponse(200, 'User found')
+  @Response(404, 'User not found')
+  @Security('jwt')
+  public async profile(@Request() req: ExpressRequest) {
+    const repo = AppDataSource.getRepository(User);
+    const email = req.user!.email
+    const user = await repo.findOneBy({ email });
+    if (user === null) {
+      throw new HttpError(404, `Benutzer mit E-Mail-Adresse ${email} wurde nicht gefunden.`);
+    }
+    return { email: user.email };
   }
 }

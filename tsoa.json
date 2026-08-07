@@ -9,9 +9,9 @@
     "specVersion": 3,
     "securityDefinitions": {
       "jwt": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "jwt"
       }
     }
   },

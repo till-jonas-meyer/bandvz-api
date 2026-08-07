@@ -3,8 +3,17 @@ import { RegisterRoutes } from "./routes";
 import "reflect-metadata";
 import type { ErrorRequestHandler } from "express";
 import { HttpError } from "./httpError";
+import path from 'path';
+import cookieParser from "cookie-parser";
+import cors from 'cors';
+import 'dotenv/config';
 
 export const app = express();
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
 
 // Use body parser to read sent json payloads
 app.use(
@@ -29,6 +38,12 @@ const errorRequestHandler: ErrorRequestHandler = (err, req, res, next) => {
   });
 }
 
+app.use(cookieParser());
+
 RegisterRoutes(app);
 
 app.use(errorRequestHandler);
+
+app.get('/openapi/swagger.json', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'dist', 'swagger.json'));
+});

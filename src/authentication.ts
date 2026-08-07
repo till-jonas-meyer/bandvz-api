@@ -20,13 +20,7 @@ export const expressAuthentication = async (
     throw new HttpError(500, `Unknown security name ${securityName}`);
   }
 
-  const authHeader = request.headers.authorization;
-
-  if (!authHeader) {
-    throw new HttpError(500, 'No authorization header');
-  }
-
-  const token = authHeader.replace('Bearer ', '');
+  const token = request.cookies.jwt;
 
   try {
 

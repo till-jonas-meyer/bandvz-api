@@ -43,3 +43,7 @@
       GRANT ALL PRIVILEGES ON ROUTINES TO bandvz;
 
     ALTER DATABASE bandvz OWNER TO bandvz;
+
+## TSOA commands
+* Generate routes: `npx tsoa routes`
+* Generate `openapi.json`: `npx tsoa spec`

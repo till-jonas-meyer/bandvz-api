@@ -89,6 +89,15 @@ export class UserController extends Controller {
     }
 
     const token = jwt.sign({ email: body.email }, process.env.JWT_SECRET!);
+
+    req.res!.cookie('jwt', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
     return { token };
   }
 
@@ -213,7 +222,7 @@ export class UserController extends Controller {
   @Security('jwt')
   public async profile(@Request() req: ExpressRequest) {
     const repo = AppDataSource.getRepository(User);
-    const email = req.user!.email
+    const email = req.user!.email;
     const user = await repo.findOneBy({ email });
     if (user === null) {
       throw new HttpError(404, `Benutzer mit E-Mail-Adresse ${email} wurde nicht gefunden.`);

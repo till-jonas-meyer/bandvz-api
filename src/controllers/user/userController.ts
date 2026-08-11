@@ -19,7 +19,10 @@ import { AppDataSource } from '../../data-source';
 import { User } from '../../entities/user/User';
 import { rateLimiter, getRateLimitKey } from '../../middleware/rateLimiter';
 import argon2 from 'argon2';
-import { Request as ExpressRequest } from 'express';
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse
+} from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
 import { sendMail } from '../../email';
@@ -99,6 +102,19 @@ export class UserController extends Controller {
     });
 
     return { token };
+  }
+
+  @Post('logout')
+  @SuccessResponse(200, 'Logout successful')
+  public async logout(@Request() req: ExpressRequest) {
+    req.res!.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return { message: 'Du wurdest ausgelogt.' };
   }
 
   @Post('register')

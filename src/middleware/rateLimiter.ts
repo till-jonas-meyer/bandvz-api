@@ -25,7 +25,7 @@ export const rateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: 'Zu viele Anfragen. Bitte versuche es in einer Stunde erneut.'
+    message: 'Zu viele Anfragen. Bitte versuche es in einer Stunde erneut.'
   },
   keyGenerator: getRateLimitKey,
 });

@@ -27,6 +27,7 @@ import { ipKeyGenerator } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
 import { sendMail } from '../../email';
 import { hashPassword } from '../../helpers/hashPassword';
+import type { ErrorResponse } from '../../httpError';
 
 type LoginParameters = {
   email: string;
@@ -56,8 +57,8 @@ export class UserController extends Controller {
 
   @Post('login')
   @SuccessResponse(200, 'Successful login')
-  @Response(500, 'Invalid JWT secret or other server error')
-  @Response(401, 'Credentials invalid')
+  @Response<ErrorResponse>(500, 'Invalid JWT secret or other server error')
+  @Response<ErrorResponse>(401, 'Credentials invalid')
   @Middlewares(rateLimiter)
   public async login(@Body() body: LoginParameters, @Request() req: ExpressRequest) {
 
@@ -72,11 +73,11 @@ export class UserController extends Controller {
     const user = await repo.findOneBy({ email: body.email });
 
     if (user === null) {
-      throw new HttpError(401, `Benutzer mit E-Mail ${body.email} nicht gefunden.`);
+      throw new HttpError(401, `Ein Benutzer mit E-Mail-Adresse ${body.email} wurde nicht gefunden.`);
     }
 
     if (!user.active) {
-      throw new HttpError(401, `Benutzer mit E-Mail ${body.email} wurde noch nicht aktiviert.`)
+      throw new HttpError(401, `Der Benutzer mit E-Mail-Adresse ${body.email} wurde noch nicht aktiviert.`)
     }
 
     const passwordCorrect = await argon2.verify(user.password, body.password);
@@ -101,7 +102,7 @@ export class UserController extends Controller {
       path: '/',
     });
 
-    return { token };
+    return { email: user.email };
   }
 
   @Post('logout')
@@ -119,8 +120,8 @@ export class UserController extends Controller {
 
   @Post('register')
   @SuccessResponse(200, 'Successfully registered')
-  @Response(409, 'User exists')
-  @Response(500, 'Error while registering')
+  @Response<ErrorResponse>(409, 'User exists')
+  @Response<ErrorResponse>(500, 'Error while registering')
   @Middlewares(rateLimiter)
   public async register(@Body() body: RegisterParamaters) {
 
@@ -160,7 +161,8 @@ export class UserController extends Controller {
 
   @Post('activate')
   @SuccessResponse(200, 'Successfully activated')
-  @Response(404, 'User not found by activation code')
+  @Response<ErrorResponse>(404, 'User not found by activation code')
+  @Response<ErrorResponse>(500, 'Error while activating')
   @Middlewares(rateLimiter)
   public async activate(@Body() body: ActivateParameters) {
 
@@ -182,7 +184,8 @@ export class UserController extends Controller {
 
   @Post('reset-password')
   @SuccessResponse(200, 'Reset code was generated and sent by mail')
-  @Response(404, 'User with email not found')
+  @Response<ErrorResponse>(404, 'User with email not found')
+  @Response<ErrorResponse>(500, 'Error while generating reset code')
   @Middlewares(rateLimiter)
   public async resetPassword(@Body() body: ResetPasswordParameters) {
 
@@ -205,6 +208,8 @@ export class UserController extends Controller {
           resetCode: resetCode
         }
       );
+    } else {
+      throw new HttpError(404, 'Es wurde kein Benutzer mit dieser E-Mail gefunden.');
     }
 
     return { message: 'Ein Rücksetzungslink wurde an die angegebene E-Mail-Adresse geschickt, falls sie in der Datenbank existiert.' };
@@ -212,7 +217,8 @@ export class UserController extends Controller {
 
   @Post('change-password')
   @SuccessResponse(200, 'Password was changed')
-  @Response(404, 'User with reset code not found')
+  @Response<ErrorResponse>(404, 'User with reset code not found')
+  @Response<ErrorResponse>(500, 'Error while changing password')
   @Middlewares(rateLimiter)
   public async changePassword(@Body() body: ChangePasswordParameters) {
 
@@ -234,14 +240,15 @@ export class UserController extends Controller {
 
   @Get('profile')
   @SuccessResponse(200, 'User found')
-  @Response(404, 'User not found')
+  @Response<ErrorResponse>(404, 'User not found')
+  @Response<ErrorResponse>(500, 'Error while getting user')
   @Security('jwt')
   public async profile(@Request() req: ExpressRequest) {
     const repo = AppDataSource.getRepository(User);
     const email = req.user!.email;
     const user = await repo.findOneBy({ email });
     if (user === null) {
-      throw new HttpError(404, `Benutzer mit E-Mail-Adresse ${email} wurde nicht gefunden.`);
+      throw new HttpError(404, `Es wurde kein Benutzer mit E-Mail-Adresse ${email} gefunden.`);
     }
     return { email: user.email };
   }

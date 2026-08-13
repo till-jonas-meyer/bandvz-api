@@ -34,7 +34,7 @@ type LoginParameters = {
   password: string;
 };
 
-type RegisterParamaters = {
+type RegisterParameters = {
   email: string;
   password: string;
 };
@@ -123,7 +123,7 @@ export class UserController extends Controller {
   @Response<ErrorResponse>(409, 'User exists')
   @Response<ErrorResponse>(500, 'Error while registering')
   @Middlewares(rateLimiter)
-  public async register(@Body() body: RegisterParamaters) {
+  public async register(@Body() body: RegisterParameters) {
 
     const repo = AppDataSource.getRepository(User);
 
@@ -146,9 +146,9 @@ export class UserController extends Controller {
 
     await repo.save(newUser);
 
-    await sendMail(
+    sendMail(
       newUser.email,
-      'Aktivierung ihres Benutzerkontos bei BandVZ',
+      'Aktivierung deines Benutzerkontos bei BandVZ',
       'activation-link',
       {
         frontendUrl: process.env.FRONTEND_URL,

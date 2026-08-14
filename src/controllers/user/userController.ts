@@ -179,12 +179,11 @@ export class UserController extends Controller {
     user.active = true;
     repo.save(user);
 
-    return { message: 'Dein Benutzerkonto wurde aktiviert.' };
+    return { message: 'Dein Benutzerkonto wurde aktiviert. Du kannst dich nun mit den vergebenen Zugangsdaten einloggen.' };
   }
 
   @Post('reset-password')
   @SuccessResponse(200, 'Reset code was generated and sent by mail')
-  @Response<ErrorResponse>(404, 'User with email not found')
   @Response<ErrorResponse>(500, 'Error while generating reset code')
   @Middlewares(rateLimiter)
   public async resetPassword(@Body() body: ResetPasswordParameters) {
@@ -199,7 +198,7 @@ export class UserController extends Controller {
       user.resetCode = resetCodeHash;
       repo.save(user);
 
-      await sendMail(
+      sendMail(
         user.email,
         'Passwort bei BandVZ zurücksetzen',
         'reset-link',
@@ -208,11 +207,9 @@ export class UserController extends Controller {
           resetCode: resetCode
         }
       );
-    } else {
-      throw new HttpError(404, 'Es wurde kein Benutzer mit dieser E-Mail gefunden.');
     }
 
-    return { message: 'Ein Rücksetzungslink wurde an die angegebene E-Mail-Adresse geschickt, falls sie in der Datenbank existiert.' };
+    return { message: `Ein Rücksetzungslink wurde an die angegebene E-Mail-Adresse ${body.email} geschickt, falls sie in der Datenbank existiert. Mit diesem Link kannst du dein Passwort neu vergeben.` };
   }
 
   @Post('change-password')
@@ -234,7 +231,7 @@ export class UserController extends Controller {
     user.password = await hashPassword(body.password);
     await repo.save(user);
 
-    return { message: 'Das Passwort wurde geändert.' };
+    return { message: 'Dein Passwort wurde geändert.' };
   }
 
 

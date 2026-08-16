@@ -92,7 +92,7 @@ export class UserController extends Controller {
       rateLimiter.resetKey(getRateLimitKey(req));
     }
 
-    const token = jwt.sign({ email: body.email }, process.env.JWT_SECRET!);
+    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET!);
 
     req.res!.cookie('jwt', token, {
       httpOnly: true,
@@ -247,6 +247,6 @@ export class UserController extends Controller {
     if (user === null) {
       throw new HttpError(404, `Es wurde kein Benutzer mit E-Mail-Adresse ${email} gefunden.`);
     }
-    return { email: user.email };
+    return { userId: user.id, email: user.email };
   }
 }

@@ -44,6 +44,13 @@
 
     ALTER DATABASE bandvz OWNER TO bandvz;
 
-## TSOA commands
+## Develompent commands
+
+### TSOA commands
 * Generate routes: `npx tsoa routes`
-* Generate `openapi.json`: `npx tsoa spec`
+* Generate `dist/swagger.json`: `npx tsoa spec`
+  * the file can be used to automatically generate services in the frontend
+
+### TypeORM commands
+* Generate migration from changes in the TypeORM entities: `npm run migration:generate`
+* Run migrations to update the database: `npm run migration:run`

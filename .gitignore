@@ -2,3 +2,4 @@
 /src/routes.ts
 /.env
 /dist
+/storage

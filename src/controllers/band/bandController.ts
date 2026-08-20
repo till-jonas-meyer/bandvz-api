@@ -29,7 +29,7 @@ import fs from 'fs/promises';
 export class BandController extends Controller {
 
   @Post('create-draft')
-  @SuccessResponse(200, 'Band was created')
+  @SuccessResponse(201, 'Band was created')
   @Security('jwt')
   async createDraft(@Request() req: ExpressRequest) {
 
@@ -118,4 +118,74 @@ export class BandController extends Controller {
     return { message: 'Band wurde aktualisiert.' };
   };
 
+  @Delete('delete/{bandId}')
+  @Security('jwt')
+  @Response<ErrorResponse>(403, 'No rights')
+  @SuccessResponse(200, 'Band deleted')
+  async deleteBand(
+    @Path() bandId: string,
+    @Request() req: ExpressRequest,
+  ) {
+    const bandRepo = AppDataSource.getRepository(Band);
+    const band = await bandRepo.findOne({
+      where: { id: Number(bandId) },
+      relations: { user: true, tracks: true }
+    });
+
+    if (!band) {
+      return { message: 'Band not found' };
+    }
+
+    if (band.user.id !== req.user!.userId) {
+      throw new HttpError(403, 'User cannot delete band');
+    }
+
+    for (const track of band.tracks) {
+      try {
+        await fs.unlink(`storage/tracks/${track.uuid}.mp3`);
+      } catch (e) { }
+    }
+
+    bandRepo.delete(band.id);
+
+    return { message: `Band ${band.name} wurde gelöscht.` };
+  }
+
+  @Get('get/{bandId}')
+  @Response<ErrorResponse>(404, 'Band not found')
+  @SuccessResponse(200, 'Band was found')
+  async getBand(
+    @Path() bandId: string,
+  ) {
+    const bandRepo = AppDataSource.getRepository(Band);
+    const band = await bandRepo.findOneBy({ id: Number(bandId) });
+
+    if (!band) {
+      throw new HttpError(404, 'Band wurde nicht gefunden.');
+    }
+
+    return {
+      name: band.name,
+      description: band.description,
+      imgUuid: band.imgUuid
+    };
+  }
+
+  @Get('user-bands')
+  @Security('jwt')
+  @Response(200, 'Bands where found')
+  async getBandsForUser(
+    @Request() req: ExpressRequest
+  ) {
+
+    const { userId } = req.user!;
+
+    const userRepo = AppDataSource.getRepository(User);
+    const user = await userRepo.findOne({
+      where: { id: userId },
+      relations: { bands: true }
+    });
+
+    return user!.bands;
+  }
 }

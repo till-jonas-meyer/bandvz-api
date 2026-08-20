@@ -121,7 +121,7 @@ export class UserController extends Controller {
   }
 
   @Post('register')
-  @SuccessResponse(200, 'Successfully registered')
+  @SuccessResponse(201, 'Successfully registered')
   @Response<ErrorResponse>(409, 'User exists')
   @Response<ErrorResponse>(500, 'Error while registering')
   @Middlewares(rateLimiter)
@@ -247,7 +247,6 @@ export class UserController extends Controller {
 
     return { message: 'Dein Passwort wurde geändert.' };
   }
-
 
   @Get('profile')
   @SuccessResponse(200, 'User found')

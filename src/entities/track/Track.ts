@@ -17,4 +17,7 @@ export class Track {
 
   @ManyToOne(() => Band, (band) => band.tracks, { onDelete: 'CASCADE' })
   band: Band;
+
+  @Column()
+  order: number;
 }

@@ -11,6 +11,15 @@ const trackStorage = multer.diskStorage({
       .split(".")
       .pop();
 
+    if (file.mimetype !== 'audio/mpeg') {
+      cb(new Error('Uploaded file is not an MP3'), file.originalname);
+    }
+
+    // Allow max. 10 MB file size
+    if (file.size > 10 * 1024 * 1024) {
+      cb(new Error('Uploaded file is too big'), file.originalname);
+    }
+
     cb(
       null,
       `${crypto.randomUUID()}.${extension}`
@@ -34,7 +43,12 @@ const bandImageStorage = multer.diskStorage({
       .pop();
 
     if (file.mimetype !== 'image/png') {
-      cb(new Error('No PNG uploaded'), file.originalname);
+      cb(new Error('Uploaded file is not a PNG'), file.originalname);
+    }
+
+    // Allow max. 10 MB file size
+    if (file.size > 10 * 1024 * 1024) {
+      cb(new Error('Uploaded file is too big'), file.originalname);
     }
 
     cb(

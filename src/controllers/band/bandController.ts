@@ -51,16 +51,6 @@ export class BandController extends Controller {
     return { bandId: savedBand.id };
   };
 
-  @Put('test')
-  @Middlewares(uploadBandImageMiddleware)
-  @Consumes('multipart/form-data')
-  test(
-    @FormField() message: string,
-    @UploadedFile() testFile?: Express.Multer.File
-  ) {
-    return { message };
-  }
-
   @Put('update/{bandId}')
   @Security('jwt')
   @Middlewares(uploadBandImageMiddleware)

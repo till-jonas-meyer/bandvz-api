@@ -28,6 +28,7 @@ import { randomBytes, createHash } from 'crypto';
 import { sendMail } from '../../email';
 import { hashPassword } from '../../helpers/hashPassword';
 import type { ErrorResponse } from '../../httpError';
+import { verifyTurnstile } from '../../services/verifyTurnstile';
 
 type LoginParameters = {
   email: string;
@@ -37,6 +38,7 @@ type LoginParameters = {
 type RegisterParameters = {
   email: string;
   password: string;
+  turnstileToken: string;
 };
 
 type ActivateParameters = {
@@ -123,7 +125,19 @@ export class UserController extends Controller {
   @Response<ErrorResponse>(409, 'User exists')
   @Response<ErrorResponse>(500, 'Error while registering')
   @Middlewares(rateLimiter)
-  public async register(@Body() body: RegisterParameters) {
+  public async register(
+    @Body() body: RegisterParameters,
+    @Request() req: ExpressRequest
+  ) {
+
+    const result = await verifyTurnstile(
+      body.turnstileToken,
+      req.ip
+    );
+
+    if (!result.success) {
+      throw new HttpError(403, 'Turnstile verification failed.')
+    }
 
     const repo = AppDataSource.getRepository(User);
 

@@ -140,6 +140,12 @@ export class BandController extends Controller {
       throw new HttpError(403, 'User cannot delete band');
     }
 
+    try {
+      if (band.imgUuid) {
+        await fs.unlink(`storage/bandimgs/${band.imgUuid}.png`);
+      }
+    } catch (e) { }
+
     for (const track of band.tracks) {
       try {
         await fs.unlink(`storage/tracks/${track.uuid}.mp3`);

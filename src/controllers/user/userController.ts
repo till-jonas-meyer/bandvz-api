@@ -104,7 +104,7 @@ export class UserController extends Controller {
       path: '/',
     });
 
-    return { email: user.email };
+    return { email: user.email, userId: user.id };
   }
 
   @Post('logout')

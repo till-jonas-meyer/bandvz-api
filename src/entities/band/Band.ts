@@ -28,6 +28,9 @@ export class Band {
   @Column({ type: 'uuid', nullable: true })
   imgUuid: string | null;
 
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  imgExt: string | null;
+
   @Column({ type: 'enum', enum: BandStatus, default: BandStatus.draft })
   status: BandStatus
 

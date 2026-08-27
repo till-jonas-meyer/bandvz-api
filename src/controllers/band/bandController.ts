@@ -24,6 +24,7 @@ import { HttpError } from '../../httpError';
 import { uploadBandImageMiddleware } from '../../middleware/upload';
 import type { ErrorResponse } from '../../httpError';
 import fs from 'fs/promises';
+import { getBandImgFilename } from '../../helpers/getBandImgFilename';
 
 @Route('band')
 export class BandController extends Controller {
@@ -42,6 +43,7 @@ export class BandController extends Controller {
     newBand.name = '';
     newBand.description = '';
     newBand.imgUuid = null;
+    newBand.imgExt = null;
     newBand.user = user!;
     newBand.status = BandStatus.draft;
     newBand.tracks = [];
@@ -87,7 +89,7 @@ export class BandController extends Controller {
 
     if (imageAction === 'delete') {
       if (band.imgUuid) {
-        await fs.unlink(`storage/bandimgs/${band.imgUuid}.png`);
+        await fs.unlink(getBandImgFilename(band.imgUuid, band.imgExt));
       }
       band.imgUuid = null;
       bandRepo.save(band);
@@ -97,16 +99,24 @@ export class BandController extends Controller {
 
       // Remove existing file
       if (band.imgUuid) {
-        await fs.unlink(`storage/bandimgs/${band.imgUuid}.png`);
+        await fs.unlink(getBandImgFilename(band.imgUuid, band.imgExt));
       }
 
       if (!req?.file) {
         throw new HttpError(400, 'Bad reqeust');
       }
 
-      // Store new imgUuid
+      // Store new imgUuid 
       const newUuid = req.file.filename.split('.')[0]!;
+
+      let newExt: string | null | undefined = req.file.filename.split('.').pop();
+
+      if (!newExt) {
+        newExt = null;
+      }
+
       band.imgUuid = newUuid;
+      band.imgExt = newExt;
       bandRepo.save(band);
     }
 
@@ -142,7 +152,7 @@ export class BandController extends Controller {
 
     try {
       if (band.imgUuid) {
-        await fs.unlink(`storage/bandimgs/${band.imgUuid}.png`);
+        await fs.unlink(getBandImgFilename(band.imgUuid, band.imgExt));
       }
     } catch (e) { }
 
@@ -173,7 +183,9 @@ export class BandController extends Controller {
     return {
       name: band.name,
       description: band.description,
-      imgUuid: band.imgUuid
+      imgUuid: band.imgUuid,
+      imgExt: band.imgExt,
+      status: band.status,
     };
   }
 

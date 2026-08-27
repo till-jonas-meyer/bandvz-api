@@ -47,3 +47,5 @@ app.use(errorRequestHandler);
 app.get('/openapi/swagger.json', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'dist', 'swagger.json'));
 });
+
+app.use('/storage', express.static('storage'));

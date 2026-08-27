@@ -42,8 +42,8 @@ const bandImageStorage = multer.diskStorage({
       .split('.')
       .pop();
 
-    if (file.mimetype !== 'image/png') {
-      cb(new Error('Uploaded file is not a PNG'), file.originalname);
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Uploaded file is not an image file'), file.originalname);
     }
 
     // Allow max. 10 MB file size

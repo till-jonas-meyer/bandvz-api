@@ -44,6 +44,7 @@ export class TrackController extends Controller {
   @Middlewares(uploadTrackMiddleware)
   @Response<ErrorResponse>(404, 'Band not found')
   @Response<ErrorResponse>(403, 'No rights to alter Band')
+  @Response<ErrorResponse>(409, 'Maximum number of tracks reached')
   @SuccessResponse(201, 'Track was created')
   async addTrack(
     @Request() req: ExpressRequest,
@@ -58,7 +59,7 @@ export class TrackController extends Controller {
 
     const band = await bandRepo.findOne({
       where: { id: bandId },
-      relations: { user: true }
+      relations: { user: true, tracks: true }
     });
 
     if (!band) {
@@ -67,6 +68,10 @@ export class TrackController extends Controller {
 
     if (band.user.id !== userId) {
       throw new HttpError(403, 'No rights to edit this band');
+    }
+
+    if (band.tracks.length >= Number(process.env.MAX_NUM_TRACKS_PER_BAND)) {
+      throw new HttpError(409, 'Maximum number of tracks for band reached.');
     }
 
     const trackUuid = req.file!.filename.split('.')[0]!;

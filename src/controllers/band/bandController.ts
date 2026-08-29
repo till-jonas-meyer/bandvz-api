@@ -25,26 +25,40 @@ import { uploadBandImageMiddleware } from '../../middleware/upload';
 import type { ErrorResponse } from '../../httpError';
 import fs from 'fs/promises';
 import { getBandImgFilename } from '../../helpers/getBandImgFilename';
+import 'dotenv/config';
 
 @Route('band')
 export class BandController extends Controller {
 
   @Post('create-draft')
   @SuccessResponse(201, 'Band was created')
+  @Response<ErrorResponse>(404, 'User not found')
+  @Response<ErrorResponse>(409, 'Maximum number of bands reached')
   @Security('jwt')
   async createDraft(@Request() req: ExpressRequest) {
 
     const userRepo = AppDataSource.getRepository(User);
     const bandRepo = AppDataSource.getRepository(Band);
 
-    const user = await userRepo.findOneBy({ id: req.user!.userId });
+    const user = await userRepo.findOne({
+      where: { id: req.user!.userId },
+      relations: { bands: true }
+    });
+
+    if (!user) {
+      throw new HttpError(404, 'User not found');
+    }
+
+    if (user.bands.length >= Number(process.env.MAX_NUM_BANDS_PER_USER)) {
+      throw new HttpError(409, 'Maximum number of bands per user reached.');
+    }
 
     const newBand = new Band();
     newBand.name = '';
     newBand.description = '';
     newBand.imgUuid = null;
     newBand.imgExt = null;
-    newBand.user = user!;
+    newBand.user = user;
     newBand.status = BandStatus.draft;
     newBand.tracks = [];
 
@@ -181,6 +195,7 @@ export class BandController extends Controller {
     }
 
     return {
+      id: band.id,
       name: band.name,
       description: band.description,
       imgUuid: band.imgUuid,

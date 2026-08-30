@@ -20,4 +20,8 @@ export class Track {
 
   @Column()
   order: number;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  fileExt: string | null;
+
 }

@@ -7,9 +7,14 @@ const trackStorage = multer.diskStorage({
   },
 
   filename: (_req, file, cb) => {
+
     const extension = file.originalname
       .split(".")
       .pop();
+
+    if (!extension) {
+      cb(new Error('File has no extension'), file.originalname)
+    }
 
     if (file.mimetype !== 'audio/mpeg') {
       cb(new Error('Uploaded file is not an MP3'), file.originalname);

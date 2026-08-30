@@ -45,12 +45,17 @@ export class TrackController extends Controller {
   @Response<ErrorResponse>(404, 'Band not found')
   @Response<ErrorResponse>(403, 'No rights to alter Band')
   @Response<ErrorResponse>(409, 'Maximum number of tracks reached')
+  @Response<ErrorResponse>(422, 'Field too long')
   @SuccessResponse(201, 'Track was created')
   async addTrack(
     @Request() req: ExpressRequest,
     @FormField() bandId: number,
     @FormField() title: string,
   ) {
+
+    if (title.length > Number(process.env.MAX_LENGTH_TRACK_TITLE)) {
+      throw new HttpError(422, 'Track title too long');
+    }
 
     const userId = req.user!.userId;
 
@@ -76,11 +81,16 @@ export class TrackController extends Controller {
 
     const trackUuid = req.file!.filename.split('.')[0]!;
 
+    const extension = req.file!.filename
+      .split('.')
+      .pop();
+
     const newTrack = new Track();
 
     newTrack.title = title;
     newTrack.uuid = trackUuid;
     newTrack.band = band;
+    newTrack.fileExt = extension!;
 
     // Get MAX of "order"
     const result = await trackRepo.createQueryBuilder('track')
@@ -110,9 +120,9 @@ export class TrackController extends Controller {
       throw new HttpError(404, 'Track not found.');
     }
 
-    const { title, uuid } = track;
+    const { title, uuid, fileExt } = track;
 
-    return { title, uuid };
+    return { title, uuid, fileExt };
   }
 
   @Put('update/{trackUuid}')
@@ -201,7 +211,8 @@ export class TrackController extends Controller {
 
     return tracks.map(track => ({
       uuid: track.uuid,
-      title: track.title
+      title: track.title,
+      fileExt: track.fileExt,
     }));
 
   }

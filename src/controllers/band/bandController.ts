@@ -72,6 +72,7 @@ export class BandController extends Controller {
   @Middlewares(uploadBandImageMiddleware)
   @Consumes('multipart/form-data')
   @SuccessResponse(200, 'Band was updated')
+  @Response<ErrorResponse>(422, 'Field to long')
   @Response<ErrorResponse>(404, 'Band not found')
   @Response<ErrorResponse>(403, 'No rights')
   @Response<ErrorResponse>(400, 'Bad request')
@@ -82,6 +83,14 @@ export class BandController extends Controller {
     @FormField() description: string,
     @FormField() imageAction: 'keep' | 'replace' | 'delete',
   ) {
+
+    if (name.length > Number(process.env.MAX_LENGTH_BAND_NAME)) {
+      throw new HttpError(422, 'Band name too long');
+    }
+
+    if (description.length > Number(process.env.MAX_LENGTH_BAND_DESCRIPTION)) {
+      throw new HttpError(422, 'Band description too long');
+    }
 
     const userRepo = AppDataSource.getRepository(User);
     const bandRepo = AppDataSource.getRepository(Band);

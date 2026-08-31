@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USERNAME,
     pass: process.env.SMTP_PASSWORD,
   },
-  secure: false
+  secure: !!Number(process.env.SMTP_SECURE)
 });
 
 const renderTemplate = async (templateName: string, data: any) => {

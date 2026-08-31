@@ -27,6 +27,15 @@ import fs from 'fs/promises';
 import { getBandImgFilename } from '../../helpers/getBandImgFilename';
 import 'dotenv/config';
 
+type GetRandomBandsParameters = {
+  pageSize: number;
+};
+
+type GetBandsParameters = {
+  pageSize: number;
+  searchTerm: string;
+};
+
 @Route('band')
 export class BandController extends Controller {
 
@@ -197,7 +206,10 @@ export class BandController extends Controller {
     @Path() bandId: string,
   ) {
     const bandRepo = AppDataSource.getRepository(Band);
-    const band = await bandRepo.findOneBy({ id: Number(bandId) });
+    const band = await bandRepo.findOne({
+      where: { id: Number(bandId) },
+      relations: { user: true }
+    });
 
     if (!band) {
       throw new HttpError(404, 'Band wurde nicht gefunden.');
@@ -210,6 +222,7 @@ export class BandController extends Controller {
       imgUuid: band.imgUuid,
       imgExt: band.imgExt,
       status: band.status,
+      userId: band.user.id
     };
   }
 
@@ -229,5 +242,43 @@ export class BandController extends Controller {
     });
 
     return user!.bands;
+  }
+
+  @Post('random-bands')
+  @Response(200, 'Bands where found')
+  async getRandomBands(
+    @Body() body: GetRandomBandsParameters
+  ) {
+    const bandRepo = AppDataSource.getRepository(Band);
+
+    const bands = await bandRepo
+      .createQueryBuilder('band')
+      .where('band.status = :status', { status: 'active' })
+      .leftJoinAndSelect('band.tracks', 'track')
+      .orderBy('RANDOM()')
+      .limit(body.pageSize)
+      .getMany();
+
+    return bands;
+  }
+
+  @Post('list-bands')
+  @Response(200, 'Bands where found')
+  async getBands(
+    @Body() body: GetBandsParameters
+  ) {
+    const bandRepo = AppDataSource.getRepository(Band);
+
+    const bands = await bandRepo
+      .createQueryBuilder('band')
+      .where('band.name ILIKE :search', { search: `%${body.searchTerm}%` })
+      .andWhere('band.status = :status', { status: 'active' })
+      .leftJoinAndSelect('band.tracks', 'track')
+      .orderBy('band.name')
+      .limit(body.pageSize)
+      .getMany();
+
+    return bands;
+
   }
 }

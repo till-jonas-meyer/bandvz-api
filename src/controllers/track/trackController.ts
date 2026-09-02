@@ -104,7 +104,8 @@ export class TrackController extends Controller {
     await trackRepo.save(newTrack);
 
     return {
-      uuid: newTrack.uuid
+      uuid: newTrack.uuid,
+      fileExt: newTrack.fileExt
     };
   }
 

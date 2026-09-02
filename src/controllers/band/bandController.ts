@@ -19,6 +19,7 @@ import {
 import { Request as ExpressRequest } from 'express';
 import { AppDataSource } from '../../data-source';
 import { Band, BandStatus } from '../../entities/band/Band';
+import { Track } from '../../entities/track/Track';
 import { User } from '../../entities/user/User';
 import { HttpError } from '../../httpError';
 import { uploadBandImageMiddleware } from '../../middleware/upload';
@@ -250,14 +251,22 @@ export class BandController extends Controller {
     @Body() body: GetRandomBandsParameters
   ) {
     const bandRepo = AppDataSource.getRepository(Band);
+    const trackRepo = AppDataSource.getRepository(Track);
 
     const bands = await bandRepo
       .createQueryBuilder('band')
       .where('band.status = :status', { status: 'active' })
-      .leftJoinAndSelect('band.tracks', 'track')
       .orderBy('RANDOM()')
       .limit(body.pageSize)
       .getMany();
+
+    for (const band of bands) {
+
+      band.tracks = await trackRepo.find({
+        where: { band: { id: band.id } },
+        order: { order: 'ASC' }
+      });
+    }
 
     return bands;
   }
@@ -268,15 +277,22 @@ export class BandController extends Controller {
     @Body() body: GetBandsParameters
   ) {
     const bandRepo = AppDataSource.getRepository(Band);
+    const trackRepo = AppDataSource.getRepository(Track);
 
     const bands = await bandRepo
       .createQueryBuilder('band')
       .where('band.name ILIKE :search', { search: `%${body.searchTerm}%` })
       .andWhere('band.status = :status', { status: 'active' })
-      .leftJoinAndSelect('band.tracks', 'track')
       .orderBy('band.name')
       .limit(body.pageSize)
       .getMany();
+
+    for (const band of bands) {
+      band.tracks = await trackRepo.find({
+        where: { band: { id: band.id } },
+        order: { order: 'ASC' }
+      });
+    }
 
     return bands;
 

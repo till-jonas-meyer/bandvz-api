@@ -33,6 +33,7 @@ type UpdateParameters = {
 type ReorderParameters = {
   uuid: string;
   title: string;
+  fileExt: string;
 }[];
 
 @Route('track')

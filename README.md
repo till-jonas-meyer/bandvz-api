@@ -15,6 +15,7 @@
 * Configure a PostgreSQL database (see below)
 * Put DB credentials in `.env`
 * Run `npm run migration:run`
+* Run `mkdir storage`, `mkdir storage/bandimgs` and `mkdir storage/tracks` to create storage directories.
 * Run `npm run dev`
 
 ## Configure PostgreSQL

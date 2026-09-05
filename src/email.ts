@@ -35,12 +35,18 @@ const renderTemplate = async (templateName: string, data: any) => {
 };
 
 export const sendMail = async (to: string, subject: string, template: string, data: any) => {
+
   const templates = await renderTemplate(template, data);
 
-  await transporter.sendMail({
-    from: `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_FROM}>`,
-    to,
-    subject,
-    ...templates
-  });
+  try {
+    await transporter.sendMail({
+      from: `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_FROM}>`,
+      to,
+      subject,
+      ...templates
+    });
+  } catch (e) {
+    console.error('Mail could not be sent.');
+  }
+
 }

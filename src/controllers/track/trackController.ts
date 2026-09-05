@@ -43,6 +43,7 @@ export class TrackController extends Controller {
   @Security('jwt')
   @Consumes('multipart/form-data')
   @Middlewares(uploadTrackMiddleware)
+  @Response<ErrorResponse>(400, 'File has no extension')
   @Response<ErrorResponse>(404, 'Band not found')
   @Response<ErrorResponse>(403, 'No rights to alter Band')
   @Response<ErrorResponse>(409, 'Maximum number of tracks reached')
@@ -86,12 +87,16 @@ export class TrackController extends Controller {
       .split('.')
       .pop();
 
+    if (!extension) {
+      throw new HttpError(400, 'File has no extension');
+    }
+
     const newTrack = new Track();
 
     newTrack.title = title;
     newTrack.uuid = trackUuid;
     newTrack.band = band;
-    newTrack.fileExt = extension!;
+    newTrack.fileExt = extension;
 
     // Get MAX of "order"
     const result = await trackRepo.createQueryBuilder('track')
@@ -187,7 +192,7 @@ export class TrackController extends Controller {
     }
 
     try {
-      await fs.unlink(`storage/tracks/${track.uuid}.mp3`);
+      await fs.unlink(`storage/tracks/${track.uuid}.${track.fileExt}`);
     } catch (e) { }
 
     await trackRepo.delete(track.uuid);

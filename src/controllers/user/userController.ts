@@ -10,7 +10,8 @@ import {
   Response,
   SuccessResponse,
   Middlewares,
-  Security
+  Security,
+  Delete,
 } from 'tsoa';
 import jwt from 'jsonwebtoken';
 import "dotenv/config";
@@ -29,6 +30,7 @@ import { sendMail } from '../../email';
 import { hashPassword } from '../../helpers/hashPassword';
 import type { ErrorResponse } from '../../httpError';
 import { verifyTurnstile } from '../../services/verifyTurnstile';
+import fs from 'fs/promises';
 
 type LoginParameters = {
   email: string;
@@ -117,7 +119,7 @@ export class UserController extends Controller {
       path: '/',
     });
 
-    return { message: 'Du wurdest ausgelogt.' };
+    return { message: 'Du wurdest ausgeloggt.' };
   }
 
   @Post('register')
@@ -261,5 +263,50 @@ export class UserController extends Controller {
       throw new HttpError(404, `Es wurde kein Benutzer mit E-Mail-Adresse ${email} gefunden.`);
     }
     return { userId: user.id, email: user.email };
+  }
+
+  @Delete('')
+  @Security('jwt')
+  @Response<ErrorResponse>(404, 'User not found')
+  @SuccessResponse(200, 'User deleted')
+  public async deleteUser(
+    @Request() req: ExpressRequest
+  ) {
+
+    const userRepo = AppDataSource.getRepository(User);
+    const email = req.user!.email;
+    const user = await userRepo.findOne({
+      where: { email },
+      relations: { bands: { tracks: true } }
+    });
+
+    if (user === null) {
+      throw new HttpError(404, 'User not found');
+    }
+
+    // Delete files
+    for (const band of user.bands) {
+      for (const track of band.tracks) {
+        try {
+          await fs.unlink(`storage/tracks/${track.uuid}.${track.fileExt}`);
+        } catch (e) { }
+      }
+      try {
+        await fs.unlink(`storage/bandimgs/${band.imgUuid}.${band.imgExt}`);
+      } catch (e) { }
+    }
+
+    userRepo.delete(user.id);
+
+    // Log the user out
+    req.res!.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return { message: 'Der Benutzer wurde gelöscht.' };
+
   }
 }

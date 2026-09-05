@@ -191,7 +191,7 @@ export class BandController extends Controller {
 
     for (const track of band.tracks) {
       try {
-        await fs.unlink(`storage/tracks/${track.uuid}.mp3`);
+        await fs.unlink(`storage/tracks/${track.uuid}.${track.fileExt}`);
       } catch (e) { }
     }
 
